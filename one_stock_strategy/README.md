@@ -75,3 +75,19 @@ Outputs:
 For more reliable results, use many months of data and test the winning
 configuration on a completely separate date range that was not used by the
 optimizer.
+
+## Fast native 5-minute optimization
+
+The optimizer now downloads and caches native 5-minute bars, precomputes all
+indicators once, and runs each candidate using a Numba-compiled NumPy backtest.
+It uses 5-minute RSI/MACD/relative-volume signals and optionally checks only
+completed 15-minute candles for confirmation.
+
+PowerShell example:
+
+```powershell
+python optimize_one_stock_strategy.py --ticker AAPL --start 2025-01-01 --end 2026-06-30 --trials 5000 --validation-fraction 0.30 --minimum-trades 10
+```
+
+The new raw cache is named `AAPL_5minute_raw_bars.csv`. The previous one-minute
+cache is intentionally not reused because native 5-minute bars are much smaller.

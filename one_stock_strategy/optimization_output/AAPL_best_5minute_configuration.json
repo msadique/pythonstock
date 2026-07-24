@@ -1,0 +1,44 @@
+{
+  "ticker": "AAPL",
+  "bar_size": "5 minutes",
+  "optimization_start": "2025-01-01",
+  "optimization_end": "2026-06-30",
+  "validation_start": "2026-01-20",
+  "trials": 5000,
+  "parameters": {
+    "rsi_buy_min": 46.860584231601194,
+    "rsi_buy_max": 65.76150607255735,
+    "rsi_sell": 69.99718689088776,
+    "relative_volume_min": 1.26450069090685,
+    "macd_hist_min": 0.0,
+    "require_rsi_rising": 0.0,
+    "require_volume_rising": 0.0,
+    "require_macd_rising": 0.0,
+    "use_15m_confirmation": 1.0,
+    "rsi_15m_min": 41.13932005107041,
+    "relative_volume_15m_min": 1.2192032056237156,
+    "macd_hist_15m_min": -0.01,
+    "required_15m_rising": 0.0,
+    "stop_loss_pct": 0.025,
+    "take_profit_pct": 0.02
+  },
+  "train_metrics": {
+    "score": 2.466192059591721,
+    "total_return_pct": 1.022838661628911,
+    "max_drawdown_pct": -1.0977294705564855,
+    "number_of_trades": 16.0,
+    "win_rate_pct": 31.25,
+    "profit_factor": 1.3536768241056112,
+    "average_trade_return_pct": 0.06581703284022147
+  },
+  "validation_metrics": {
+    "score": 12.390873397485855,
+    "total_return_pct": 4.435459740100001,
+    "max_drawdown_pct": -0.8356690740913164,
+    "number_of_trades": 10.0,
+    "win_rate_pct": 70.0,
+    "profit_factor": 5.87155619419536,
+    "average_trade_return_pct": 0.4388225264892087
+  },
+  "robust_score": 13.007421412383785
+}

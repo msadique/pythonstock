@@ -59,22 +59,6 @@ class StrategyConfig:
     volume_lookback_sessions: int = 30
     volume_spike_multiple: float = 1.5
 
-    # Multi-timeframe bullish confirmation (2m, 5m, 15m).
-    confirmation_timeframes: tuple[int, ...] = (2, 5, 15)
-    required_confirmations: int = 3
-    rsi_2m_min: float = 45.0
-    rsi_5m_min: float = 48.0
-    rsi_15m_min: float = 50.0
-    volume_2m_min: float = 1.20
-    volume_5m_min: float = 1.15
-    volume_15m_min: float = 1.10
-    macd_hist_2m_min: float = 0.0
-    macd_hist_5m_min: float = 0.0
-    macd_hist_15m_min: float = 0.0
-    require_rising_rsi: bool = True
-    require_rising_volume: bool = True
-    require_rising_macd: bool = True
-
     # Backtest settings
     initial_cash: float = 100_000.0
     allocation_pct: float = 1.0
@@ -120,12 +104,6 @@ def validate_config(config: StrategyConfig) -> None:
         raise ValueError("volume_lookback_sessions must be at least 1.")
     if config.volume_spike_multiple <= 0:
         raise ValueError("volume_spike_multiple must be positive.")
-    if config.required_confirmations < 1 or config.required_confirmations > len(config.confirmation_timeframes):
-        raise ValueError("required_confirmations must be between 1 and the number of confirmation timeframes.")
-    if config.timespan != "minute" or config.multiplier != 1:
-        raise ValueError(
-            "Multi-timeframe 2m/5m/15m confirmation requires --timespan minute --multiplier 1."
-        )
 
 
 def chunks_by_calendar_days(
@@ -397,106 +375,24 @@ def add_same_time_volume_baseline(
     return result
 
 
-def resample_ohlcv(df: pd.DataFrame, minutes: int) -> pd.DataFrame:
-    """Create completed N-minute OHLCV candles from one-minute bars."""
-    rule = f"{minutes}min"
-    aggregation = {
-        "open": "first",
-        "high": "max",
-        "low": "min",
-        "close": "last",
-        "volume": "sum",
-    }
-    if "transactions" in df.columns:
-        aggregation["transactions"] = "sum"
-
-    # right/right means a 09:30-09:32 candle is labeled 09:32.  When joined
-    # backward to the one-minute stream, only a completed higher-timeframe
-    # candle is visible.
-    result = df.resample(rule, label="right", closed="right").agg(aggregation)
-    return result.dropna(subset=["open", "high", "low", "close"])
-
-
-def add_multi_timeframe_confirmation(
-    df: pd.DataFrame,
-    config: StrategyConfig,
-) -> pd.DataFrame:
-    """Attach 2m/5m/15m indicator state and compute bullish confirmations."""
-    result = df.copy().sort_index()
-    thresholds = {
-        2: (config.rsi_2m_min, config.volume_2m_min, config.macd_hist_2m_min),
-        5: (config.rsi_5m_min, config.volume_5m_min, config.macd_hist_5m_min),
-        15: (config.rsi_15m_min, config.volume_15m_min, config.macd_hist_15m_min),
-    }
-
-    confirmation_columns: list[str] = []
-
-    for minutes in config.confirmation_timeframes:
-        higher = resample_ohlcv(result, minutes)
-        higher = add_rsi(higher, config.rsi_period)
-        higher = add_macd(
-            higher,
-            config.macd_fast,
-            config.macd_slow,
-            config.macd_signal,
-        )
-        higher = add_same_time_volume_baseline(
-            higher,
-            config.volume_lookback_sessions,
-            config.timezone,
-        )
-
-        suffix = f"_{minutes}m"
-        selected = higher[[
-            "close", "rsi", "macd", "macd_signal", "macd_histogram",
-            "volume", "volume_avg_30_sessions", "relative_volume",
-        ]].rename(columns=lambda column: f"{column}{suffix}")
-
-        # Completed-bar values are carried forward until the next completed
-        # candle. This avoids using an unfinished 5m/15m candle.
-        result = result.join(selected, how="left").ffill()
-
-        result[f"rsi_rising{suffix}"] = (
-            result[f"rsi{suffix}"] > result[f"rsi{suffix}"].shift(1)
-        )
-        result[f"volume_rising{suffix}"] = (
-            result[f"relative_volume{suffix}"]
-            > result[f"relative_volume{suffix}"].shift(1)
-        )
-        result[f"macd_rising{suffix}"] = (
-            result[f"macd_histogram{suffix}"]
-            > result[f"macd_histogram{suffix}"].shift(1)
-        )
-
-        rsi_min, volume_min, macd_hist_min = thresholds[minutes]
-        condition = (
-            (result[f"rsi{suffix}"] >= rsi_min)
-            & (result[f"relative_volume{suffix}"] >= volume_min)
-            & (result[f"macd_histogram{suffix}"] >= macd_hist_min)
-        )
-        if config.require_rising_rsi:
-            condition &= result[f"rsi_rising{suffix}"]
-        if config.require_rising_volume:
-            condition &= result[f"volume_rising{suffix}"]
-        if config.require_rising_macd:
-            condition &= result[f"macd_rising{suffix}"]
-
-        confirmation_column = f"bull_confirm{suffix}"
-        result[confirmation_column] = condition.fillna(False)
-        confirmation_columns.append(confirmation_column)
-
-    result["bull_confirmation_count"] = result[confirmation_columns].sum(axis=1)
-    result["multi_timeframe_bullish"] = (
-        result["bull_confirmation_count"] >= config.required_confirmations
-    )
-    return result
-
-
 def add_signals(
     df: pd.DataFrame,
     config: StrategyConfig,
 ) -> pd.DataFrame:
-    """Create long-only signals with 2m/5m/15m bullish confirmation."""
+    """
+    Long-only signal rules.
+
+    BUY:
+    - MACD crosses above its signal line.
+    - RSI is at or below the configured buy level.
+    - Current volume is at least X times the same-time 30-session average.
+
+    SELL:
+    - MACD crosses below its signal line, OR
+    - RSI is at or above the configured sell level.
+
+    Signals are generated at bar close and executed on the NEXT bar's open.
+    """
     result = df.copy()
 
     macd_cross_up = (
@@ -512,17 +408,10 @@ def add_signals(
         result["relative_volume"] >= config.volume_spike_multiple
     )
 
-    result["base_bull_setup"] = (
+    result["buy_signal"] = (
         macd_cross_up
         & (result["rsi"] <= config.rsi_buy_level)
         & result["volume_spike"]
-    ).fillna(False)
-
-    # A final bull signal is emitted only after enough higher-timeframe
-    # confirmations indicate that momentum and participation are increasing.
-    result["buy_signal"] = (
-        result["base_bull_setup"]
-        & result["multi_timeframe_bullish"]
     ).fillna(False)
 
     result["sell_signal"] = (
@@ -641,7 +530,7 @@ def backtest(
                     entry_time=current_time,
                     entry_price=entry_price,
                     entry_fee=entry_fee,
-                    entry_reason="rsi_macd_relative_volume_multitimeframe",
+                    entry_reason="rsi_macd_relative_volume",
                 )
 
         # 3. Check stop/take-profit within current candle after entry/hold.
@@ -800,7 +689,6 @@ def prepare_dataset(
         config.volume_lookback_sessions,
         config.timezone,
     )
-    df = add_multi_timeframe_confirmation(df, config)
     df = add_signals(df, config)
     return df
 
@@ -843,19 +731,6 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--rsi-buy", type=float, default=35.0)
     parser.add_argument("--rsi-sell", type=float, default=65.0)
-    parser.add_argument("--rsi-2m-min", type=float, default=45.0)
-    parser.add_argument("--rsi-5m-min", type=float, default=48.0)
-    parser.add_argument("--rsi-15m-min", type=float, default=50.0)
-    parser.add_argument("--volume-2m-min", type=float, default=1.20)
-    parser.add_argument("--volume-5m-min", type=float, default=1.15)
-    parser.add_argument("--volume-15m-min", type=float, default=1.10)
-    parser.add_argument("--macd-hist-2m-min", type=float, default=0.0)
-    parser.add_argument("--macd-hist-5m-min", type=float, default=0.0)
-    parser.add_argument("--macd-hist-15m-min", type=float, default=0.0)
-    parser.add_argument(
-        "--required-confirmations", type=int, default=3,
-        help="How many of 2m/5m/15m must be bullish (1-3).",
-    )
     parser.add_argument(
         "--volume-spike",
         type=float,
@@ -896,16 +771,6 @@ def main() -> None:
         rsi_buy_level=args.rsi_buy,
         rsi_sell_level=args.rsi_sell,
         volume_spike_multiple=args.volume_spike,
-        required_confirmations=args.required_confirmations,
-        rsi_2m_min=args.rsi_2m_min,
-        rsi_5m_min=args.rsi_5m_min,
-        rsi_15m_min=args.rsi_15m_min,
-        volume_2m_min=args.volume_2m_min,
-        volume_5m_min=args.volume_5m_min,
-        volume_15m_min=args.volume_15m_min,
-        macd_hist_2m_min=args.macd_hist_2m_min,
-        macd_hist_5m_min=args.macd_hist_5m_min,
-        macd_hist_15m_min=args.macd_hist_15m_min,
         initial_cash=args.initial_cash,
         allocation_pct=args.allocation,
         commission_per_order=args.commission,
@@ -1002,19 +867,6 @@ def main() -> None:
     )
     print(f"Relative volume:  {latest['relative_volume']:.2f}x")
     print(f"Volume spike:     {bool(latest['volume_spike'])}")
-    for minutes in config.confirmation_timeframes:
-        suffix = f"_{minutes}m"
-        print(
-            f"{minutes:>2}m confirmation: "
-            f"RSI={latest[f'rsi{suffix}']:.2f}, "
-            f"RVOL={latest[f'relative_volume{suffix}']:.2f}x, "
-            f"MACD hist={latest[f'macd_histogram{suffix}']:.6f}, "
-            f"bull={bool(latest[f'bull_confirm{suffix}'])}"
-        )
-    print(
-        f"Bull confirmations: {int(latest['bull_confirmation_count'])}/"
-        f"{len(config.confirmation_timeframes)}"
-    )
     print(f"Buy signal:       {bool(latest['buy_signal'])}")
     print(f"Sell signal:      {bool(latest['sell_signal'])}")
 

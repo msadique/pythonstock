@@ -1,0 +1,52 @@
+{
+  "ticker": "TSLA",
+  "bar_size": "5 minutes",
+  "optimization_start": "2025-01-01",
+  "optimization_end": "2026-06-30",
+  "validation_start": "2026-01-20",
+  "trials": 5000,
+  "parameters": {
+    "rsi_buy_min": 32.04813609254718,
+    "rsi_buy_max": 48.2247277680535,
+    "rsi_sell": 77.53889412575512,
+    "relative_volume_min": 1.12510605857338,
+    "macd_hist_min": 0.0,
+    "require_rsi_rising": 1.0,
+    "require_volume_rising": 0.0,
+    "require_macd_rising": 1.0,
+    "use_15m_confirmation": 0.0,
+    "rsi_15m_min": 57.07877303129935,
+    "relative_volume_15m_min": 1.3337272399763522,
+    "macd_hist_15m_min": 0.0,
+    "required_15m_rising": 0.0,
+    "stop_loss_pct": 0.01,
+    "take_profit_pct": 0.03
+  },
+  "train_metrics": {
+    "score": 4.255388566984047,
+    "total_return_pct": 11.818016302977142,
+    "max_drawdown_pct": -8.80893464073268,
+    "number_of_trades": 53.0,
+    "win_rate_pct": 37.735849056603776,
+    "profit_factor": 1.4425490558604528,
+    "average_trade_return_pct": 0.22166485087308327,
+    "average_holding_minutes": 541.9811320754717,
+    "minimum_holding_minutes": 0.0,
+    "maximum_holding_minutes": 4035.0,
+    "average_holding_bars": 17.37735849056604
+  },
+  "validation_metrics": {
+    "score": 22.043271641096688,
+    "total_return_pct": 18.101109782561654,
+    "max_drawdown_pct": -2.462443785284374,
+    "number_of_trades": 27.0,
+    "win_rate_pct": 66.66666666666666,
+    "profit_factor": 3.611255504538113,
+    "average_trade_return_pct": 0.6276806974734891,
+    "average_holding_minutes": 1042.962962962963,
+    "minimum_holding_minutes": 10.0,
+    "maximum_holding_minutes": 5450.0,
+    "average_holding_bars": 19.25925925925926
+  },
+  "robust_score": 23.1071187828427
+}
