@@ -1,0 +1,69 @@
+{
+  "ticker": "AAPL",
+  "best_score": -121.32469449275062,
+  "parameters": {
+    "rsi_buy_min": 30.147521090418937,
+    "rsi_buy_max": 57.50941653555717,
+    "pullback_volume_min": 0.8996023249670045,
+    "require_pullback_macd_rising": true,
+    "trend_rsi_min": 56.08084472791369,
+    "trend_rsi_max": 81.08280135842226,
+    "trend_volume_min": 0.9291872212097332,
+    "breakout_lookback": 18,
+    "ml_probability_min": 0.5344078118580174,
+    "stop_loss_pct": 0.011849399364581565,
+    "pullback_take_profit_pct": 0.02405794205164142,
+    "trend_trailing_stop_pct": 0.007116185894978422,
+    "cooldown_bars": 7,
+    "minimum_hold_bars": 6,
+    "max_hold_bars": 90,
+    "pullback_rsi_sell": 69.02089191112567,
+    "trend_macd_down_bars": 2,
+    "require_positive_long_trend": false,
+    "block_high_volatility": false,
+    "atr_percentile_limit": 0.8382509186601624
+  },
+  "model": "LightGBM",
+  "folds": [
+    {
+      "fold": 1,
+      "validation_start": "2025-09-04",
+      "total_return_pct": 0.17394773210002157,
+      "max_drawdown_pct": -0.46323624055706336,
+      "number_of_trades": 2,
+      "win_rate_pct": 50.0,
+      "profit_factor": 13.739244471593238,
+      "average_trade_return_pct": 0.08717070626679257
+    },
+    {
+      "fold": 2,
+      "validation_start": "2025-11-14",
+      "total_return_pct": -0.24554424799999586,
+      "max_drawdown_pct": -0.5959507898896987,
+      "number_of_trades": 1,
+      "win_rate_pct": 0.0,
+      "profit_factor": 0.0,
+      "average_trade_return_pct": -0.2458308555865818
+    },
+    {
+      "fold": 3,
+      "validation_start": "2026-01-30",
+      "total_return_pct": 0.0,
+      "max_drawdown_pct": 0.0,
+      "number_of_trades": 0,
+      "win_rate_pct": 0.0,
+      "profit_factor": 0.0,
+      "average_trade_return_pct": 0.0
+    },
+    {
+      "fold": 4,
+      "validation_start": "2026-04-15",
+      "total_return_pct": 0.0,
+      "max_drawdown_pct": 0.0,
+      "number_of_trades": 0,
+      "win_rate_pct": 0.0,
+      "profit_factor": 0.0,
+      "average_trade_return_pct": 0.0
+    }
+  ]
+}

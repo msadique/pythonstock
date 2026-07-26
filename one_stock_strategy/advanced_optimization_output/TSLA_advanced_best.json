@@ -1,0 +1,69 @@
+{
+  "ticker": "TSLA",
+  "best_score": 11.215111454649076,
+  "parameters": {
+    "rsi_buy_min": 41.41754622900535,
+    "rsi_buy_max": 52.736769198795436,
+    "pullback_volume_min": 0.8501889230239059,
+    "require_pullback_macd_rising": false,
+    "trend_rsi_min": 61.734387129184526,
+    "trend_rsi_max": 70.46868884391651,
+    "trend_volume_min": 0.868788538315645,
+    "breakout_lookback": 12,
+    "ml_probability_min": 0.5000113469899873,
+    "stop_loss_pct": 0.018651329759637923,
+    "pullback_take_profit_pct": 0.03619247406136352,
+    "trend_trailing_stop_pct": 0.02418780252959277,
+    "cooldown_bars": 7,
+    "minimum_hold_bars": 6,
+    "max_hold_bars": 104,
+    "pullback_rsi_sell": 76.71203605873022,
+    "trend_macd_down_bars": 2,
+    "require_positive_long_trend": false,
+    "block_high_volatility": false,
+    "atr_percentile_limit": 0.8127753568208474
+  },
+  "model": "LightGBM",
+  "folds": [
+    {
+      "fold": 1,
+      "validation_start": "2025-09-04",
+      "total_return_pct": 12.345733526000036,
+      "max_drawdown_pct": -1.1974178436623406,
+      "number_of_trades": 6,
+      "win_rate_pct": 100.0,
+      "profit_factor": 5.0,
+      "average_trade_return_pct": 1.9802853750689906
+    },
+    {
+      "fold": 2,
+      "validation_start": "2025-11-14",
+      "total_return_pct": 3.583133025300067,
+      "max_drawdown_pct": -0.9033500825153196,
+      "number_of_trades": 7,
+      "win_rate_pct": 85.71428571428571,
+      "profit_factor": 10.089675084883732,
+      "average_trade_return_pct": 0.5062082715605091
+    },
+    {
+      "fold": 3,
+      "validation_start": "2026-01-30",
+      "total_return_pct": 6.421327092478335,
+      "max_drawdown_pct": -1.5946619930544026,
+      "number_of_trades": 8,
+      "win_rate_pct": 50.0,
+      "profit_factor": 5.772622984322493,
+      "average_trade_return_pct": 0.7906298877755318
+    },
+    {
+      "fold": 4,
+      "validation_start": "2026-04-15",
+      "total_return_pct": 7.2757391940000415,
+      "max_drawdown_pct": -1.0889044525481895,
+      "number_of_trades": 5,
+      "win_rate_pct": 80.0,
+      "profit_factor": 78.78832876647611,
+      "average_trade_return_pct": 1.4256116291098309
+    }
+  ]
+}
